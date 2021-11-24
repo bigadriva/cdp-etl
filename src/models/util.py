@@ -1,0 +1,59 @@
+"""Este módulo contém funções comuns para utilização nos módulos de modelos."""
+
+from typing import List
+
+
+def process_cnpj(cnpj: str) -> str:
+    """Realiza o processamento do CNPJ.
+    
+    Args
+        cnpj (str) -- O CNPJ a ser processado.
+
+    Returns
+        str -- O CNPJ processado.
+    """
+    if isinstance(cnpj, str):
+        return cnpj \
+            .replace('.', '') \
+            .replace('/', '') \
+            .replace('-', '')
+    return ''
+
+def process_text(text: str) -> str:
+    """Realiza o processamento do texto passado.
+    
+    Args
+        text (str) -- O texto a ser processado.
+
+    Returns
+        str -- O texto processado.
+    """
+    if isinstance(text, str):
+        return text \
+            .lower() \
+            .replace('á', 'a') \
+            .replace('é', 'e') \
+            .replace('í', 'i') \
+            .replace('ó', 'o') \
+            .replace('ú', 'u') \
+            .replace('â', 'a') \
+            .replace('ê', 'e') \
+            .replace('ã', 'a') \
+            .replace('õ', 'o') \
+            .replace('ç', 'c')
+
+    return ''
+
+
+def preprocess_insert_values_text(texts: List[str]) -> List[str]:
+    """Realiza o pré-processamento do texto antes de enviá-lo para a consulta
+    no banco de dados. Isso é feito para evitar que caracteres tais como uma
+    aspa simples gere um erro.
+    
+    Args
+        text (str) -- O texto a ser pré-processado.
+
+    Returns
+        str -- O texto pré-processado.
+    """
+    return [ text.replace("'", "''") for text in texts ]
