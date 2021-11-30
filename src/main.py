@@ -35,6 +35,7 @@ def main():
 
 
 def main2():
+    import os
     pipeline()
     
 

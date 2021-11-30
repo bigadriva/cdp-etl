@@ -85,7 +85,7 @@ def get_cities_from_elastic(ids_split: list) -> list:
             try:
                 print('[ENRICH] Getting', i+1, 'of', len(ids_split))
                 docs.append(elastic.mget(
-                    body={'ids': _ids}, index='empresasdobrasilv12', _source=['cnpj', 'municipio', 'bairro', 'endereco']))
+                    body={'ids': _ids}, index='empresasdobrasilv13', _source=['cnpj', 'municipio', 'bairro', 'endereco']))
             except Exception as e:
                 print(f'[ENRICH] Error:{e}')
     return docs

@@ -1,6 +1,6 @@
 """Este módulo contém funções comuns para utilização nos módulos de modelos."""
 
-from typing import List
+from typing import Any, List
 
 
 def process_cnpj(cnpj: str) -> str:
@@ -57,3 +57,24 @@ def preprocess_insert_values_text(texts: List[str]) -> List[str]:
         str -- O texto pré-processado.
     """
     return [ text.replace("'", "''") for text in texts ]
+
+
+def process_currency_values(value: str) -> float:
+    """Processa o valor monetário a partir da string.
+    O padrão aceito é um valor com casa decimal separado por vírgula.
+    
+    Args
+        value (str) -- O valor a ser processado.
+
+    Returns
+        float -- O valor processado.
+    """
+    value = value.replace(',', '.')
+    value = float(value)
+
+    return value
+
+
+def as_array(array: List[Any]):
+    array = [ str(value) for value in array ]
+    return '{' + ', '.join(array) + '}'

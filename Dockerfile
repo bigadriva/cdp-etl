@@ -24,5 +24,4 @@ ENV FTP_PASSWORD="@123driva#"
 ENV SHEET_CLIENTS="clients"
 ENV SHEET_POTENTIALS="potentials"
 
-# CMD [ "python", "-u", "src/main.py" ]
 CMD [ "uvicorn", "src.api:app", "--reload", "--host", "0.0.0.0" ]

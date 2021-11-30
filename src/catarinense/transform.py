@@ -3,9 +3,7 @@ fazer o upload dos dados para o banco de dados utilizado."""
 
 import pandas as pd
 
-from typing import Callable, Dict, List
-
-from src.services.util import Service
+from typing import List
 
 from src.models.base import BaseModel
 from src.models.entities.client import Client
@@ -13,6 +11,7 @@ from src.models.entities.company import Company
 from src.models.entities.salesperson import Salesperson
 from src.models.entities.acting_region import ActingRegion
 from src.models.entities.product import Product
+from src.models.entities.characteristics import Characteristics
 from src.models.relationships.buys_from import BuysFrom
 from src.models.relationships.sells_to import SellsTo
 from src.models.relationships.sells import Sells
@@ -21,33 +20,26 @@ from src.models.relationships.acts_in import ActsIn
 from src.services.enrich import enrich
 
 
-def transform(services_factories: Dict[str, Callable[[], Service]]) -> List[List[BaseModel]]:
+def transform() -> List[BaseModel]:
     """Realiza a etapa de transformação dos dados.
 
     Returns
         List[dict].
     """
-    company_list = []
-    product_list = []
-    acting_region_list = []
-    salesperson_list = []
-    client_list = []
-    buys_from_list = []
-    sells_to_list = []
-    sells_list = []
-    acts_in_list = []
-
-
     path_prefix = 'data/catarinense'
 
     df_dados = pd.read_csv(f'{path_prefix}/dados_driva.csv', delimiter=';', dtype=str)
     df_vend = pd.read_csv(f'{path_prefix}/vend_driva.csv', delimiter=';', dtype=str)
     df_prod = pd.read_csv(f'{path_prefix}/prod_driva.csv', delimiter=';', dtype=str)
+    df_close_up = pd.read_csv(f'{path_prefix}/close_up.csv', dtype=str)
+    cols = ['CNPJ_PDV']
+    cols.extend([col for col in df_close_up.columns if 'CAT' in col])
+    df_close_up = df_close_up[cols]
+    df_close_up['CNPJ_PDV'] = df_close_up['CNPJ_PDV'].str.zfill(14)
 
-    df = pd.merge(df_dados, df_vend,
-                        how="left", left_on="VEND_NF", right_on="VEND_CLI")
-    df = pd.merge(df, df_prod,
-                        how="left", left_on="COD", right_on="CODIGO")
+    df = pd.merge(df_dados, df_vend, how="left", left_on="VEND_NF", right_on="VEND_CLI")
+    df = pd.merge(df, df_prod, how="left", left_on="COD", right_on="CODIGO")
+    df = pd.merge(df, df_close_up, how='left', left_on='CNPJ', right_on='CNPJ_PDV')
     df = df.rename(columns={
         "CNPJ": "cnpj",
         "AREA_CLI": "area_client",
@@ -60,14 +52,21 @@ def transform(services_factories: Dict[str, Callable[[], Service]]) -> List[List
         'VAL_LOG_FAT': 'valor_ol',
         "PRODUTO": "produto",
         'CODIGO': 'codigo',
-        'FAMILIA': 'familia'
+        'FAMILIA': 'familia',
+        'CAT MERC DE XAROPE': 'cat_xarope',
+        'CAT MERC DE DIGES LIQUIDOS': 'cat_diges_liquidos',
+        'CAT MERC DE DIGES FLACONETES': 'cat_diges_flaconetes',
+        'CAT MERC DE POLIVITAMINICOS': 'cat_polivitaminicos',
+        'CAT MERC DE FITOVITAL': 'cat_fitovital',
     })
+
 
     df = df[df['cnpj'] != '00000000000000']
 
     df = df.iloc[:min(df.shape[0], 2_000_000), :]
 
     df = enrich(df)
+    # print(df)
 
     out_prefix = 'out'
     df.to_csv(f'{out_prefix}/all.csv', sep=';')
@@ -83,30 +82,40 @@ def transform(services_factories: Dict[str, Callable[[], Service]]) -> List[List
         num_failed = 0
 
         for row in df.to_dict('records'):
+            entities = []
             # ----------------------------------------------------------------------
             # Transformando entidades
 
             # Clientes da driva.
             company = transform_companies(row)
             if company is not None:
-                company_list.append(company)
+                # company_list.append(company)
+                entities.append(company)
 
             product = transform_products(row)
             if product is not None:
-                product_list.append(product)
+                # product_list.append(product)
+                entities.append(product)
 
             acting_region = transform_acting_regions(row)
             if acting_region is not None:
-                acting_region_list.append(acting_region)
+                # acting_region_list.append(acting_region)
+                entities.append(acting_region)
 
             salesperson = transform_salespersons(row)
             if salesperson is not None:
-                salesperson_list.append(salesperson)
+                # salesperson_list.append(salesperson)
+                entities.append(salesperson)
 
             # Clientes das empresas clientes da driva.
             client = transform_clients(row)
             if client is not None:
-                client_list.append(client)
+                # client_list.append(client)
+                entities.append(client)
+
+            characteristics = transform_characteristics(row)
+            if characteristics is not None:
+                entities.append(characteristics)
 
 
             if company is not None:
@@ -122,44 +131,36 @@ def transform(services_factories: Dict[str, Callable[[], Service]]) -> List[List
                 buys_from = BuysFrom()
                 buys_from.references_company(company)
                 buys_from.references_client(client)
-                buys_from_list.append(buys_from)
+                # buys_from_list.append(buys_from)
+                entities.append(buys_from)
 
             if client is not None and salesperson is not None:
                 sells_to = SellsTo()
                 sells_to.references_client(client)
                 sells_to.references_salesperson(salesperson)
-                sells_to_list.append(sells_to)
+                # sells_to_list.append(sells_to)
+                entities.append(sells_to)
 
             if salesperson is not None and product is not None:
                 sells = transform_sells(row)
                 sells.references_salesperson(salesperson)
                 sells.references_product(product)
-                sells_list.append(sells)
+                # sells_list.append(sells)
+                entities.append(sells)
 
             if salesperson is not None and acting_region is not None:
                 acts_in = ActsIn()
                 acts_in.references_salesperson(salesperson)
                 acts_in.references_acting_region(acting_region)
-                acts_in_list.append(acts_in)
+                # acts_in_list.append(acts_in)
+                entities.append(acts_in)
 
-                
+            yield entities
+
+            for entity in entities:
+                del entity
 
         print(f'Ocorreram erros em {num_failed} dos {len(df)} registros.')
-
-
-    entities = [
-        company_list,
-        product_list,
-        acting_region_list,
-        salesperson_list,
-        client_list,
-        buys_from_list,
-        sells_to_list,
-        sells_list,
-        acts_in_list
-    ]
-
-    return entities
 
 
 def transform_companies(row: dict) -> Company:
@@ -212,8 +213,7 @@ def transform_acting_regions(row: dict) -> ActingRegion:
     acting_region.neighborhood = row['bairro']
     acting_region.address = row['endereco']
 
-    if acting_region.city == '' \
-            or acting_region.address == '':
+    if acting_region.city == '':
         acting_region = None
 
     return acting_region
@@ -263,6 +263,38 @@ def transform_clients(row: dict) -> Client:
     return client
 
 
+def transform_characteristics(row: dict) -> Characteristics:
+    """Realiza a etapa de transformação dos dados de características.
+
+    Args
+        row (dict) -- O registro a ser transformado.
+
+    Returns
+        Characteristics -- As características de clientes contidos na base lida.
+    """
+    characteristics = Characteristics()
+    characteristics.company_cnpj = '84684620000187'
+    characteristics.client_cnpj = row['cnpj']
+
+    characteristics.name_array = [
+        'Cat Xarope',
+        'Cat Digestivos Líquidos',
+        'Cat Digestivos Flaconetes',
+        'Cat Polivitamínicos',
+        'Cat Fitovital'
+    ]
+    characteristics.order_array = [1, 2, 3, 4, 5]
+    characteristics.value_array = [
+        row['cat_xarope'],
+        row['cat_diges_liquidos'],
+        row['cat_diges_flaconetes'],
+        row['cat_polivitaminicos'],
+        row['cat_fitovital'],
+    ]
+    
+    return characteristics
+
+
 def transform_sells(row: dict) -> Sells:
     """Realiza a etapa de transformação dos dados de vendas.
 
@@ -274,5 +306,6 @@ def transform_sells(row: dict) -> Sells:
     """
     sell = Sells()
     sell.date = row['data']
+    sell.value = row['valor_fat']
     
     return sell
