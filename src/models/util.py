@@ -1,5 +1,7 @@
 """Este módulo contém funções comuns para utilização nos módulos de modelos."""
 
+import datetime
+
 from typing import Any, List
 
 
@@ -73,6 +75,15 @@ def process_currency_values(value: str) -> float:
     value = float(value)
 
     return value
+
+
+def process_date(date: str) -> datetime.date:
+    try:
+        date = datetime.datetime.strptime(date, '%d/%m/%Y').date()
+    except:
+        date = None
+    
+    return date
 
 
 def as_array(array: List[Any]):

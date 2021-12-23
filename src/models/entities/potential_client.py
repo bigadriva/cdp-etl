@@ -5,7 +5,7 @@ from src.models.entities.acting_region import ActingRegion
 from src.models.util import process_cnpj, process_text
 
 
-class Client(BaseModel):
+class PotentialClient(BaseModel):
     """Representa um cliente."""
     def __init__(self) -> None:
         """Inicializa uma instância do cliente."""
@@ -14,7 +14,7 @@ class Client(BaseModel):
         self.__cnpj = ''
         self.__name = ''
         self.acting_region_id = ''
-        self.table_name = 'client'
+        self.table_name = 'potential_client'
 
 
     @property

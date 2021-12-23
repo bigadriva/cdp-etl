@@ -14,8 +14,7 @@ class ActsIn(BaseModel):
 
         self.salesperson_internal_id = ''
         self.salesperson_name = ''
-        self.acting_region_city = ''
-        self.acting_region_address = ''
+        self.acting_region_id = ''
         self.table_name = 'acts_in'
 
     
@@ -41,14 +40,12 @@ class ActsIn(BaseModel):
         Returns
             None.
         """
-        self.acting_region_city = acting_region.city
-        self.acting_region_address = acting_region.address
+        self.acting_region_id = acting_region.id
 
 
     def to_dict(self) -> dict:
         return {
             'salesperson_internal_id': self.salesperson_internal_id,
             'salesperson_name': self.salesperson_name,
-            'acting_region_city': self.acting_region_city,
-            'acting_region_address': self.acting_region_address,
+            'acting_region_id': self.acting_region_id,
         }

@@ -11,7 +11,7 @@ class ActingRegion(BaseModel):
         """Inicializa uma instância do cliente."""
         super().__init__()
 
-        self.__uf = ''
+        self.__id = ''
         self.__city = ''
         self.__neighborhood = ''
         self.__address = ''
@@ -19,28 +19,18 @@ class ActingRegion(BaseModel):
 
 
     @property
-    def uf(self) -> str:
-        """Método getter para a cidade da região de atuação.
+    def id(self) -> str:
+        """Método getter para o id da região de atuação.
         
         Returns
-            str -- O CNPJ do cliente.
+            str -- O id da região de atuação.
         """
-        return self.__uf
-
-
-    @uf.setter
-    def uf(self, uf: str) -> None:
-        """Método setter para a UF da região de atuação.
-
-        Args
-            uf (str) -- A UF da região de atuação.
-
-        Returns
-            None.
-        """
-        uf = process_text(uf)
-
-        self.__uf = uf
+        if self.__id == '' and (self.city != '' or self.neighborhood != '' or self.address != ''):
+            self.__id = str(abs(hash(self.city + self.neighborhood + self.address)))
+            if self.__id != '':
+                self.__id = self.__id.zfill(20)
+            
+        return self.__id
 
 
     @property
@@ -65,7 +55,7 @@ class ActingRegion(BaseModel):
         """
         city = process_text(city)
 
-        self.__city = city
+        self.__city = city[:min(100, len(city))]
 
 
     @property
@@ -90,7 +80,7 @@ class ActingRegion(BaseModel):
         """
         neighborhood = process_text(neighborhood)
 
-        self.__neighborhood = neighborhood
+        self.__neighborhood = neighborhood[:100]
 
 
     @property
@@ -121,11 +111,12 @@ class ActingRegion(BaseModel):
         """
         address = process_text(address)
 
-        self.__address = address
+        self.__address = address[:100]
 
 
     def to_dict(self) -> dict:
         return {
+            'id': self.id,
             'city': self.city,
             'neighborhood': self.neighborhood,
             'address': self.address,

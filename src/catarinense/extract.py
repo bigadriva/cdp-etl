@@ -4,10 +4,6 @@ catarinense."""
 import os
 import ftplib
 
-from typing import Dict
-
-import pandas as pd
-
 
 def extract() -> None:
     """Realiza a etapa de extração dos dados.
@@ -15,7 +11,7 @@ def extract() -> None:
     Returns
         None
     """
-    path_prefix = '../data/catarinense'
+    path_prefix = 'data/catarinense'
 
     if not os.path.exists(path_prefix):
         os.mkdir(path_prefix)
